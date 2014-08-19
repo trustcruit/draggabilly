@@ -1,3 +1,4 @@
+/*jshint node: true */
 
 // -------------------------- grunt -------------------------- //
 /* global module */
@@ -44,7 +45,7 @@ module.exports = function( grunt ) {
           banner: banner
         }
       }
-    },
+    }
 
   });
 
