@@ -255,7 +255,7 @@ Draggabilly.prototype.onmousedown = function( event ) {
   if ( button && ( button !== 0 && button !== 1 ) ) {
     return;
   }
-  this.dragStart( event, event );
+  this.pointerStart( event, event );
 };
 
 Draggabilly.prototype.ontouchstart = function( event ) {
@@ -264,7 +264,7 @@ Draggabilly.prototype.ontouchstart = function( event ) {
     return;
   }
 
-  this.dragStart( event, event.changedTouches[0] );
+  this.pointerStart( event, event.changedTouches[0] );
 };
 
 Draggabilly.prototype.onMSPointerDown =
@@ -274,7 +274,7 @@ Draggabilly.prototype.onpointerdown = function( event ) {
     return;
   }
 
-  this.dragStart( event, event );
+  this.pointerStart( event, event );
 };
 
 function setPointerPoint( point, pointer ) {
@@ -291,11 +291,11 @@ var postStartEvents = {
 };
 
 /**
- * drag start
+ * pointer start
  * @param {Event} event
  * @param {Event or Touch} pointer
  */
-Draggabilly.prototype.dragStart = function( event, pointer ) {
+Draggabilly.prototype.pointerStart = function( event, pointer ) {
   if ( !this.isEnabled ) {
     return;
   }
@@ -335,15 +335,6 @@ Draggabilly.prototype.dragStart = function( event, pointer ) {
     node: event.preventDefault ? window : document
   });
 
-  classie.add( this.element, 'is-dragging' );
-
-  // reset isDragging flag
-  this.isDragging = true;
-
-  this.emitEvent( 'dragStart', [ this, event, pointer ] );
-
-  // start animation
-  this.animate();
 };
 
 Draggabilly.prototype._bindEvents = function( args ) {
@@ -444,6 +435,19 @@ Draggabilly.prototype.dragMove = function( event, pointer ) {
   // set dragPoint properties
   this.dragPoint.x = dragX;
   this.dragPoint.y = dragY;
+
+  // check first drag
+  if ( !this.isDragging ) {
+    classie.add( this.element, 'is-dragging' );
+
+    // reset isDragging flag
+    this.isDragging = true;
+
+    this.emitEvent( 'dragStart', [ this, event, pointer ] );
+
+    // start animation
+    this.animate();
+  }
 
   this.emitEvent( 'dragMove', [ this, event, pointer ] );
 };
