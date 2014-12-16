@@ -89,6 +89,8 @@ if ( !requestAnimationFrame || !cancelAnimationFrame )  {
 
 function draggabillyDefinition( classie, EventEmitter, eventie, getStyleProperty, getSize ) {
 
+var jQuery = window.jQuery;
+
 // -------------------------- support -------------------------- //
 
 var transformProperty = getStyleProperty('transform');
@@ -131,6 +133,11 @@ Draggabilly.prototype._create = function() {
     this.element.style.position = 'relative';
   }
 
+  // add jQuery
+  if ( jQuery ) {
+    this.$element = jQuery( this.element );
+  }
+
   this.enable();
   this.setHandles();
 
@@ -144,6 +151,18 @@ Draggabilly.prototype.setHandles = function() {
     this.element.querySelectorAll( this.options.handle ) : [ this.element ];
 
   this.bindHandles( true );
+};
+
+// -------------------------- emitEvent -------------------------- //
+
+// add jQuery trigger to event emitting
+var _emitEvent = Draggabilly.prototype.emitEvent;
+Draggabilly.prototype.emitEvent = function( type, args ) {
+  // do regular emitEvent
+  _emitEvent.apply( this, arguments );
+  if ( jQuery && this.$element ) {
+    this.$element.trigger( type, args );
+  }
 };
 
 // -------------------------- bind -------------------------- //
@@ -621,6 +640,12 @@ Draggabilly.prototype.destroy = function() {
   // unbind handles
   this.bindHandles( false );
 };
+
+// ----- jQuery ----- //
+
+if ( jQuery && jQuery.bridget ) {
+  jQuery.bridget( 'draggabilly', Draggabilly );
+}
 
 // -----  ----- //
 

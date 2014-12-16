@@ -10,6 +10,9 @@
     "get-size": "^1.1.8",
     "get-style-property": "^1"
   },
+  "devDependencies": {
+    "jquery-bridget": "~1.1.0"
+  },
   "ignore": [
     "**/.*",
     "index.html",
