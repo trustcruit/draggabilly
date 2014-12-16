@@ -16,6 +16,7 @@
   "ignore": [
     "**/.*",
     "index.html",
+    "sandbox/*"
     "Gruntfile.js",
     "*.json"
   ]

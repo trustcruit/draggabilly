@@ -153,18 +153,6 @@ Draggabilly.prototype.setHandles = function() {
   this.bindHandles( true );
 };
 
-// -------------------------- emitEvent -------------------------- //
-
-// add jQuery trigger to event emitting
-var _emitEvent = Draggabilly.prototype.emitEvent;
-Draggabilly.prototype.emitEvent = function( type, args ) {
-  // do regular emitEvent
-  _emitEvent.apply( this, arguments );
-  if ( jQuery && this.$element ) {
-    this.$element.trigger( type, args );
-  }
-};
-
 // -------------------------- bind -------------------------- //
 
 /**
@@ -287,6 +275,24 @@ Draggabilly.prototype.handleEvent = function( event ) {
   }
 };
 
+
+/**
+ * emits events via eventEmitter and jQuery events
+ * @param {String} type - name of event
+ * @param {Event} event - original event
+ * @param {Event or Touch} pointer - thing that has pageX, pageY
+ */
+Draggabilly.prototype.emitDragEvent = function( type, event, pointer ) {
+  this.emitEvent( type, [ this, event, pointer ] );
+
+  if ( jQuery && this.$element ) {
+    // create jQuery event
+    var $event = jQuery.Event( event );
+    $event.type = type;
+    this.$element.trigger( $event, [ this, pointer ] );
+  }
+};
+
 // returns the touch that we're keeping track of
 Draggabilly.prototype.getTouch = function( touches ) {
   for ( var i=0, len = touches.length; i < len; i++ ) {
@@ -390,7 +396,7 @@ Draggabilly.prototype.dragStart = function( event, pointer ) {
   // reset isDragging flag
   this.isDragging = true;
 
-  this.emitEvent( 'dragStart', [ this, event, pointer ] );
+  this.emitDragEvent( 'dragStart', event, pointer );
 
   // start animation
   this.animate();
@@ -495,7 +501,7 @@ Draggabilly.prototype.dragMove = function( event, pointer ) {
   this.dragPoint.x = dragX;
   this.dragPoint.y = dragY;
 
-  this.emitEvent( 'dragMove', [ this, event, pointer ] );
+  this.emitDragEvent( 'dragMove', event, pointer );
 };
 
 function applyGrid( value, grid, method ) {
@@ -557,7 +563,7 @@ Draggabilly.prototype.dragEnd = function( event, pointer ) {
 
   classie.remove( this.element, 'is-dragging' );
 
-  this.emitEvent( 'dragEnd', [ this, event, pointer ] );
+  this.emitDragEvent( 'dragEnd', event, pointer );
 
 };
 
