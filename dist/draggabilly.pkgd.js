@@ -51,6 +51,10 @@ function extend( a, b ) {
 
 function noop() {}
 
+function isElement( obj ) {
+  return obj instanceof HTMLElement;
+}
+
 var jQuery = window.jQuery;
 
 // --------------------------  -------------------------- //

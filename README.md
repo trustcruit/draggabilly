@@ -1,11 +1,11 @@
 # Draggabilly-ps
 
-<p class="tagline">A little fork from Draggabilly and [Sirgallifrey](https://github.com/sirgallifrey/draggabilly-ps/) that implements scale, mouse wheel scroll and auto-scrolling</p>
-<p>Don't forget to check David DeSandro's awesome original Draggabilly</p>
+A little fork from Draggabilly and [Sirgallifrey](https://github.com/sirgallifrey/draggabilly-ps/) that implements scale, mouse wheel scroll and auto-scrolling
+Don't forget to check David DeSandro's awesome original Draggabilly
 
 [draggabilly.desandro.com](http://draggabilly.desandro.com)
 
-<p>For draggabily documentation refer to:</p>
+For draggabily documentation refer to:
 [draggabilly.desandro.com](http://draggabilly.desandro.com)
 
 
@@ -24,7 +24,7 @@ var $draggable = $('.draggable').draggabilly({
 
 ### Set and Get scale.
 
-<p>useful when inside and scaled element</p>
+useful when inside and scaled element
 
 ``` js
 // jQuery
