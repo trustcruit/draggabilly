@@ -1,5 +1,5 @@
 /*!
- * Draggabilly v2.2.0
+ * Draggabilly v2.2.1
  * Make that shiz draggable
  * https://draggabilly.desandro.com
  * MIT license
@@ -65,7 +65,7 @@ function Draggabilly( element, options ) {
   }
 
   // options
-  this.options = extend( {}, this.constructor.defaults );
+  this.options = extend( {scrollSpeed: 10, autoScrollThreshold: 30}, this.constructor.defaults );
   this.option( options );
 
   this._create();
@@ -109,6 +109,7 @@ proto._create = function() {
   }
 
   // events, bridge jQuery events from vanilla
+  this.on( 'pointerDown', this.onPointerDown );
   this.on( 'pointerMove', this.onPointerMove );
   this.on( 'pointerUp', this.onPointerUp );
 
@@ -124,6 +125,19 @@ proto.setHandles = function() {
     this.element.querySelectorAll( this.options.handle ) : [ this.element ];
 
   this.bindHandles();
+
+
+  //adding a extra event listener for scrolling
+  if ( this.options.parentScroll ) {
+
+     this.options.parentScroll = isElement( this.options.parentScroll ) ? this.options.parentScroll :
+      // fallback to querySelector if string
+      typeof this.options.parentScroll == 'string' ? document.querySelector( this.options.parentScroll ) :
+      // otherwise just `true`, use the parent
+      this.element.parentNode;
+
+     this.options.parentScroll.addEventListener('scroll', this);
+  }
 };
 
 /**
@@ -200,27 +214,6 @@ proto.onPointerDown = function( event, pointer ) {
   this.dispatchJQueryEvent( 'pointerDown', event, [ pointer ] );
 };
 
-proto.pointerDown = function( event, pointer ) {
-  var isOkay = this.okayPointerDown( event );
-  if ( !isOkay || !this.isEnabled ) {
-    this._pointerReset();
-    return;
-  }
-  // track start event position
-  // Safari 9 overrides pageX and pageY. These values needs to be copied. flickity#842
-  this.pointerDownPointer = {
-    pageX: pointer.pageX,
-    pageY: pointer.pageY,
-  };
-
-  event.preventDefault();
-  this.pointerDownBlur();
-  // bind move and end events
-  this._bindPostStartEvents( event );
-  this.element.classList.add('is-pointer-down');
-  this.dispatchEvent( 'pointerDown', [ event, pointer ] );
-};
-
 /**
  * drag start
  * @param {Event} event
@@ -232,6 +225,7 @@ proto.dragStart = function( event, pointer ) {
   }
   this._getPosition();
   this.measureContainment();
+  this.scrollOffset = this.measureScrollOffset();
   // position _when_ drag began
   this.startPosition.x = this.position.x;
   this.startPosition.y = this.position.y;
@@ -240,6 +234,11 @@ proto.dragStart = function( event, pointer ) {
 
   this.dragPoint.x = 0;
   this.dragPoint.y = 0;
+
+  this.lastKnownMoveVector = {
+    x: 0,
+    y: 0
+  };
 
   this.element.classList.add('is-dragging');
   this.dispatchEvent( 'dragStart', event, [ pointer ] );
@@ -290,6 +289,24 @@ proto.getContainer = function() {
   return this.element.parentNode;
 };
 
+proto.measureScrollOffset = function() {
+  if ( !this.options.parentScroll ) {
+    return;
+  }
+
+   // use element if element
+  this.options.parentScroll = isElement( this.options.parentScroll ) ? this.options.parentScroll :
+    // fallback to querySelector if string
+    typeof this.options.parentScroll == 'string' ? document.querySelector( this.options.parentScroll ) :
+    // otherwise just `true`, use the parent
+    this.options.parentScroll = this.element.parentNode;
+
+   return {
+    top: this.options.parentScroll.scrollTop,
+    left: this.options.parentScroll.scrollLeft
+  };
+ };
+
 // ----- move event ----- //
 
 proto.onPointerMove = function( event, pointer, moveVector ) {
@@ -305,12 +322,23 @@ proto.dragMove = function( event, pointer, moveVector ) {
   if ( !this.isEnabled ) {
     return;
   }
+  if (isNaN(moveVector.x) || isNaN(moveVector.y)) {
+    moveVector = this.lastKnownMoveVector;
+  } else {
+    this.lastKnownMoveVector = moveVector;
+  }
+
+  this.checkAutoScroll(pointer);
+
   var dragX = moveVector.x;
   var dragY = moveVector.y;
 
   var grid = this.options.grid;
   var gridX = grid && grid[0];
   var gridY = grid && grid[1];
+
+  dragX = this.applyScrollOffset('x', dragX);
+  dragY = this.applyScrollOffset('y', dragY);
 
   dragX = applyGrid( dragX, gridX );
   dragY = applyGrid( dragY, gridY );
@@ -324,11 +352,49 @@ proto.dragMove = function( event, pointer, moveVector ) {
 
   this.position.x = this.startPosition.x + dragX;
   this.position.y = this.startPosition.y + dragY;
+
+   if (this.options.scale) {
+    dragX = dragX / this.options.scale;
+    dragY = dragY / this.options.scale;
+  }
+
   // set dragPoint properties
   this.dragPoint.x = dragX;
   this.dragPoint.y = dragY;
 
   this.dispatchEvent( 'dragMove', event, [ pointer, moveVector ] );
+};
+
+proto.checkAutoScroll = function(pointer) {
+  if (this.options.parentScroll && this.options.autoScroll ) {
+    var scrollerRect = this.options.parentScroll.getBoundingClientRect();
+    if ((pointer.clientY - this.options.autoScrollThreshold) <= (scrollerRect.top)) {
+      this.autoScrollYDirection = -1;
+    } else if ((pointer.clientY + this.options.autoScrollThreshold) >= (scrollerRect.top + scrollerRect.height)) {
+      this.autoScrollYDirection = 1;
+    } else {
+      this.autoScrollYDirection = 0;
+    }
+  } else {
+    this.autoScrollYDirection = 0;
+  }
+};
+
+ proto.onscroll = function(event) {
+  if ( !this.isEnabled || !this.isDragging ) {
+    return;
+  }
+  this.onmousemove(event);
+};
+
+ proto.applyScrollOffset = function( axis, value ) {
+  if ( !this.options.parentScroll ) {
+    return value;
+  }
+
+   var measure = axis == 'x' ? 'left' : 'top';
+  var scrollOffset = this.measureScrollOffset();
+  return value + (scrollOffset[measure] - this.scrollOffset[measure]);
 };
 
 function applyGrid( value, grid, method ) {
@@ -385,6 +451,8 @@ proto.animate = function() {
     return;
   }
 
+  this.performAutoScroll();
+
   this.positionDrag();
 
   var _this = this;
@@ -398,6 +466,20 @@ proto.animate = function() {
 proto.setLeftTop = function() {
   this.element.style.left = this.position.x + 'px';
   this.element.style.top  = this.position.y + 'px';
+};
+
+proto.setScale = function(scale){
+  this.options.scale = scale;
+};
+
+ proto.getScale = function(){
+  return this.options.scale;
+};
+
+ proto.performAutoScroll = function(){
+  if (this.autoScrollYDirection === 1 || this.autoScrollYDirection === -1) {
+      this.options.parentScroll.scrollTop = this.options.parentScroll.scrollTop + (this.options.scrollSpeed * this.autoScrollYDirection);
+  }
 };
 
 proto.positionDrag = function() {
@@ -443,6 +525,17 @@ proto.destroy = function() {
   this.element.style.position = '';
   // unbind handles
   this.unbindHandles();
+  //removing an extra event listener for scrolling
+  if ( this.options.parentScroll ) {
+
+     this.options.parentScroll = isElement( this.options.parentScroll ) ? this.options.parentScroll :
+      // fallback to querySelector if string
+      typeof this.options.parentScroll == 'string' ? document.querySelector( this.options.parentScroll ) :
+      // otherwise just `true`, use the parent
+      this.element.parentNode;
+
+     this.options.parentScroll.addEventListener('scroll', this);
+  }
   // remove jQuery data
   if ( this.$element ) {
     this.$element.removeData('draggabilly');

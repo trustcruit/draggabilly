@@ -88,7 +88,7 @@ gulp.task( 'requirejs', function() {
 
 var uglify = require('gulp-uglify');
 
-gulp.task( 'uglify', [ 'requirejs' ], function() {
+gulp.task( 'uglify', function() {
   var banner = getBanner();
   gulp.src('dist/draggabilly.pkgd.js')
     .pipe( uglify() )
