@@ -377,7 +377,9 @@ proto.checkAutoScroll = function(pointer) {
     } else if ((pointer.clientY + this.options.autoScrollThreshold) >= (scrollerRect.top + scrollerRect.height)) {
       this.autoScrollYDirection = 1;
     } else {
-      this.autoScrollYDirection = 0;
+      if(pointer.clientY !== undefined){
+        this.autoScrollYDirection = 0;
+      }
     }
   } else {
     this.autoScrollYDirection = 0;
