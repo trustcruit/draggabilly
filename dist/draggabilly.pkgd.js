@@ -377,7 +377,9 @@ proto.checkAutoScroll = function(pointer) {
     } else if ((pointer.clientY + this.options.autoScrollThreshold) >= (scrollerRect.top + scrollerRect.height)) {
       this.autoScrollYDirection = 1;
     } else {
-      this.autoScrollYDirection = 0;
+      if(pointer.clientY !== undefined){
+        this.autoScrollYDirection = 0;
+      }
     }
   } else {
     this.autoScrollYDirection = 0;
@@ -396,7 +398,7 @@ proto.checkAutoScroll = function(pointer) {
     return value;
   }
 
-   var measure = axis == 'x' ? 'left' : 'top';
+  var measure = axis == 'x' ? 'left' : 'top';
   var scrollOffset = this.measureScrollOffset();
   return value + (scrollOffset[measure] - this.scrollOffset[measure]);
 };
